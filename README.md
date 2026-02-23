@@ -1,57 +1,103 @@
 # blackroad-threat-intel
 
-Threat Intelligence management platform with IoC tracking, MITRE ATT&CK mapping, and threat correlation.
+> Threat intelligence aggregation and IOC tracking — BlackRoad Security
+
+[![CI](https://github.com/BlackRoad-Security/blackroad-threat-intel/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackRoad-Security/blackroad-threat-intel/actions/workflows/ci.yml)
+
+Aggregate, enrich, and correlate **Indicators of Compromise (IOCs)** across threat feeds. Track threat actors, export STIX 2.1 bundles, and run FTS5-powered lookups.
 
 ## Features
 
-- 🎯 **IoC Management** – IP, domain, hash (MD5/SHA256), URL, email, CVE indicators
-- 🔍 **Auto-Detection** – Automatically detect IoC type from value format
-- 🗺️ **MITRE ATT&CK** – Map indicators to ATT&CK technique IDs (T1078, T1110, etc.)
-- 📊 **Shannon Entropy** – Future integration with secret scanner
-- 🔔 **Threat Events** – Track detection alerts and incidents
-- 💾 **SQLite** – Persistent indicator database with full-text search
+- 🔍 **IOC Types**: IP, Domain, Hash, URL, Email, CVE
+- 🎯 **Confidence + Severity**: 0–100 confidence score, info/low/medium/high/critical severity
+- 👤 **Threat Actors**: Track APT groups, aliases, TTPs (MITRE ATT&CK), motivation
+- ⚡ **FTS5 Search**: Full-text search across all indicator fields
+- 🔗 **Correlation Engine**: Find related IOCs by source, tags, and patterns
+- 📦 **STIX 2.1 Export**: Export as standards-compliant STIX 2.1 bundle JSON
+- 📥 **Bulk Import**: Import from lists or threat feed JSON
+- 💾 **SQLite**: Self-contained, zero-config persistence
 
-## Supported IoC Types
-
-| Type | Example | Detection |
-|------|---------|-----------|
-| IP | 192.168.1.1 | IPv4/IPv6 parsing |
-| Domain | evil.example.com | DNS regex |
-| HASH_MD5 | d41d8cd98f00b204... | 32 hex chars |
-| HASH_SHA256 | e3b0c44298fc1c14... | 64 hex chars |
-| URL | https://phish.com | URL prefix |
-| CVE | CVE-2024-1234 | CVE regex |
-| EMAIL | attacker@evil.com | @ + domain |
-
-## Usage
+## Quick Start
 
 ```bash
-# Add an IoC
-python src/threat_intel.py add "192.168.1.100" --severity HIGH --source "honeypot" --mitre "T1110"
+# Load demo threat data
+python threat_intel.py demo
 
-# Auto-detect type
-python src/threat_intel.py add "AKIAIOSFODNN7EXAMPLE" --source "scanner"
+# Check an IP address
+python threat_intel.py check-ip 185.220.101.45
 
-# Lookup IoC
-python src/threat_intel.py lookup "192.168.1.100"
+# Check a domain
+python threat_intel.py check-domain malware-c2.evil.com
 
-# Search IoCs
-python src/threat_intel.py search --severity CRITICAL --limit 10
+# Add a custom indicator
+python threat_intel.py add ip 10.0.0.1 85 high internal-soc
 
-# MITRE techniques
-python src/threat_intel.py mitre T1078
-python src/threat_intel.py mitre  # list all
+# Search indicators
+python threat_intel.py search "botnet"
 
-# Statistics
-python src/threat_intel.py stats
+# Get all active high+ indicators
+python threat_intel.py active high
+
+# Export as STIX 2.1
+python threat_intel.py export-stix threat_bundle.json
+
+# Correlate an indicator
+python threat_intel.py correlate <indicator_id>
+
+# View stats
+python threat_intel.py stats
 ```
 
-## Tests
+## API
+
+```python
+from threat_intel import ThreatIntelDB
+
+db = ThreatIntelDB("my_intel.db")
+
+# Add IOC
+ind = db.add_indicator("ip", "185.220.101.45", confidence=95,
+                        severity="critical", source="abuse.ch",
+                        tags=["tor", "exit-node"])
+
+# Lookup
+found = db.check_ip("185.220.101.45")
+
+# Bulk import from feed
+count = db.bulk_import([
+    {"type": "domain", "value": "evil.com", "confidence": 90,
+     "severity": "high", "source": "urlhaus", "tags": ["malware"]}
+])
+
+# Get active critical indicators
+active = db.get_active("critical")
+
+# Correlate
+related = db.correlate(ind.id)
+
+# Export STIX 2.1
+stix_json = db.export_stix_json()
+
+# Track threat actor
+actor = db.add_threat_actor("APT-01", aliases=["Shadow"],
+                             motivation="espionage",
+                             ttps=["T1566", "T1059"])
+```
+
+## Indicator Types
+
+| Type | Example | Notes |
+|------|---------|-------|
+| `ip` | `185.220.101.45` | Normalized, validated |
+| `domain` | `evil.com` | Lowercased, dot-stripped |
+| `hash` | `d41d8cd98f...` | MD5/SHA1/SHA256 |
+| `url` | `http://evil.com/payload` | As-is |
+| `email` | `phish@bad.com` | Lowercased |
+| `cve` | `CVE-2021-44228` | Uppercased |
+
+## Running Tests
 
 ```bash
-pytest tests/ -v --cov=src
+pip install pytest
+pytest test_threat_intel.py -v
 ```
-
-## License
-
-Proprietary – BlackRoad OS, Inc. All rights reserved.
