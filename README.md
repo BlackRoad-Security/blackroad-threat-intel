@@ -1,5 +1,13 @@
 # blackroad-threat-intel
 
+> BlackRoad Security - Threat Intelligence
+
+Part of the [BlackRoad OS](https://blackroad.io) ecosystem — [BlackRoad-Security](https://github.com/BlackRoad-Security)
+
+---
+
+# blackroad-threat-intel
+
 > Threat intelligence aggregation and IOC tracking — BlackRoad Security
 
 [![CI](https://github.com/BlackRoad-Security/blackroad-threat-intel/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackRoad-Security/blackroad-threat-intel/actions/workflows/ci.yml)
